@@ -1,3 +1,5 @@
 PROJECT:
-  PROJECT_DIR: "/home/fs144/ProjectTest"
-  PYTHON_VIRTUALENV_DIR: "/home/fs144/ProjectTest/venvs"
+  PROJECT_DIR: "/home/fs144/Projects"
+  PYTHON_VIRTUALENV_DIR: "/home/fs144/Development/virtualenvironments"
+
+FZF: True

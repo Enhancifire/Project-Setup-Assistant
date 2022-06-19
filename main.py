@@ -3,34 +3,34 @@ from modules.flask import flask
 from modules.git import git
 from modules.conf import conf
 from modules.conf import config
-from pyfzf.pyfzf import FzfPrompt
 from modules.lang_agnostic import directory
 from pytermgui import tim
 import os
+import inquirer
 
 
-def runfzf(tech):
-    """Runs FZF Selection Prompt
-    Takes a list or dictionary of items and returns single string"""
-    fzf = FzfPrompt()
-    choice = fzf.prompt(tech)
-    return choice[0]
+def select(tech):
+    """Tech Selection Prompt"""
 
+    lang_list = [
+        inquirer.List(
+            "lang", message="Select a Language", choices=[lang for lang in tech]
+        )
+    ]
 
-def choose():
-    """Choose the Framework to be setup"""
-    tech = {
-        "Python": {
-            "Django": django.dmain,
-            "Flask": flask.create,
-        },
-    }
+    lang = inquirer.prompt(lang_list)["lang"]
 
-    lang = runfzf(tech)
-    choice = runfzf(tech[lang])
-    func = tech[lang][choice]
+    framework_list = [
+        inquirer.List(
+            "framework",
+            message="Select Framwork",
+            choices=[frame for frame in tech[lang]],
+        )
+    ]
 
-    return func, lang, choice
+    framework = inquirer.prompt(framework_list)["framework"]
+
+    return tech[lang][framework], lang, framework
 
 
 def main():
@@ -41,32 +41,50 @@ def main():
     # Load configuration
     CONFIG = config.load()
     path = CONFIG["PROJECT"]["PROJECT_DIR"]
+    is_fzf = CONFIG["FZF"]
 
-    # Take input of project name
-    projname = input("Enter project name: ")
+    tech = {
+        "Python": {
+            "Django": django.dmain,
+            "Flask": flask.create,
+        },
+    }
 
-    # Create directory
-    if directory.create_dir(projname, path):
+    try:
+        # Take input of project name
+        projname = input("Enter project name: ")
 
-        # Change to project direcory after creation
-        os.chdir(os.path.join(path, projname))
+        # Create directory
+        if directory.create_dir(projname, path):
 
-        # Choose language and framework
-        func, lang, _ = choose()
+            # Change to project direcory after creation
+            os.chdir(os.path.join(path, projname))
 
-        # Language Specific Setup
-        conf.lang_spec(lang, projname, CONFIG)
+            # Choose language and framework
+            if is_fzf:
+                from modules.fzf import fzf
 
-        # Setup Project
-        func()
+                func, lang, _ = fzf.choose(tech)
 
-        # Setup Git Repository
-        git.git(projname)
+            else:
+                func, lang, _ = select(tech)
 
-        tim.print(f"[bold yellow]Project '{projname}' created successfully")
+            # Language Specific Setup
+            conf.lang_spec(lang, projname, CONFIG)
 
-    else:
-        return
+            # Setup Project
+            func()
+
+            # Setup Git Repository
+            git.git(projname)
+
+            tim.print(f"[bold yellow]Project '{projname}' created successfully")
+
+        else:
+            return
+
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == "__main__":
