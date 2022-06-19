@@ -1,9 +1,12 @@
 from modules.django import django
 from modules.flask import flask
 from modules.git import git
-import os
-from modules.main import main as main_module
+from modules.conf import conf
+from modules.conf import config
 from pyfzf.pyfzf import FzfPrompt
+from modules.lang_agnostic import directory
+from pytermgui import tim
+import os
 
 
 def runfzf(tech):
@@ -17,14 +20,17 @@ def runfzf(tech):
 def choose():
     """Choose the Framework to be setup"""
     tech = {
-        "Django": django.dmain,
-        "Flask": flask.create,
+        "Python": {
+            "Django": django.dmain,
+            "Flask": flask.create,
+        },
     }
 
-    choice = runfzf(tech)
+    lang = runfzf(tech)
+    choice = runfzf(tech[lang])
+    func = tech[lang][choice]
 
-    a = tech[choice]
-    a()
+    return func, lang, choice
 
 
 def main():
@@ -32,16 +38,35 @@ def main():
     Main Function running the project
     Uses FZF for user choice selection and runs appropriate function
     """
-    CONFIG = main_module.load()
-
+    # Load configuration
+    CONFIG = config.load()
     path = CONFIG["PROJECT"]["PROJECT_DIR"]
 
-    choose()
+    # Take input of project name
+    projname = input("Enter project name: ")
 
-    print(path)
+    # Create directory
+    if directory.create_dir(projname, path):
 
-    os.chdir(path)
-    print(os.getcwd())
+        # Change to project direcory after creation
+        os.chdir(os.path.join(path, projname))
+
+        # Choose language and framework
+        func, lang, _ = choose()
+
+        # Language Specific Setup
+        conf.lang_spec(lang, projname, CONFIG)
+
+        # Setup Project
+        func()
+
+        # Setup Git Repository
+        git.git(projname)
+
+        tim.print(f"[bold yellow]Project '{projname}' created successfully")
+
+    else:
+        return
 
 
 if __name__ == "__main__":
