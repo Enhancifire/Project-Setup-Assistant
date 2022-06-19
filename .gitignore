@@ -1,0 +1,7 @@
+__pycache__/
+modules/__pycache__/
+modules/conf/__pycache__/
+modules/django/__pycache__/
+modules/flask/__pycache__/
+modules/git/__pycache__/
+modules/lang_agnostic/__pycache__/
